@@ -21,7 +21,8 @@ public:
   void ProcessData(KcsApi api_name, const std::string& response);
 
 signals:
-  void SlotItemUpdated(const KanColleDatabase* db);
+  void SlotItemUpdated(const KanColleDatabase& db);
+  void DataUpdated();
 
 private:
   KanColleDatabase() = default;

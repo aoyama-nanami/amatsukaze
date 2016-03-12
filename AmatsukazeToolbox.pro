@@ -24,7 +24,8 @@ SOURCES += src/main.cpp\
     src/relaythread.cpp \
     src/kancolledatabase.cpp \
     src/mainwindow.cpp \
-    src/kcsapi.cpp
+    src/kcsapi.cpp \
+    src/slotitempanel.cpp
 
 HEADERS  += \
     src/util.h \
@@ -33,4 +34,6 @@ HEADERS  += \
     src/relaythread.h \
     src/kancolledatabase.h \
     src/mainwindow.h \
-    src/kcsapi.h
+    src/kcsapi.h \
+    src/slotitempanel.h \
+    src/httpchunkedfilter.h

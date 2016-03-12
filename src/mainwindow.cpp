@@ -2,6 +2,7 @@
 #include <QTabWidget>
 
 #include "mainwindow.h"
+#include "slotitempanel.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   auto central_widget = new QWidget;
@@ -16,8 +17,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   auto tab_widget = new QTabWidget;
   layout->addWidget(tab_widget);
 
-  tab_widget->addTab(new QWidget, "slots");
-  tab_widget->addTab(new QWidget, "ships");
+  tab_widget->addTab(new SlotItemPanel, "slots");
+  tab_widget->addTab(new QWidget, "ships");  // TODO: incomplete
 }
 
 QWebEngineView* MainWindow::GetWebEngineView() const {
