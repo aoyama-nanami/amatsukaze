@@ -1,4 +1,4 @@
-#ifndef KANCOLLEDATABASE_H
+﻿#ifndef KANCOLLEDATABASE_H
 #define KANCOLLEDATABASE_H
 
 #include <memory>
@@ -15,20 +15,23 @@ class KanColleDatabase : public QObject, public boost::noncopyable {
 public:
   static KanColleDatabase& GetInstance();
 
-  std::shared_ptr<const QJsonObject> GetData() const;
-  std::shared_ptr<const QJsonObject> GetSlotItem() const;
+  std::shared_ptr<const MstData> GetData() const;
+  std::shared_ptr<const ShipList> GetShip() const;
+  std::shared_ptr<const SlotItemList> GetSlotItem() const;
 
   void ProcessData(KcsApi api_name, const std::string& response);
 
 signals:
-  void SlotItemUpdated(const KanColleDatabase& db);
-  void DataUpdated();
+  void ShipUpdated(const KanColleDatabase* db);
+  void SlotItemUpdated(const KanColleDatabase* db);
+  void DataUpdated(const KanColleDatabase* db);
 
 private:
   KanColleDatabase() = default;
 
-  std::shared_ptr<const QJsonObject> data_;
-  std::shared_ptr<const QJsonObject> slot_item_;
+  std::shared_ptr<const MstData> data_;
+  std::shared_ptr<const ShipList> ship_;
+  std::shared_ptr<const SlotItemList> slot_item_;
 };
 
 #endif // KANCOLLEDATABASE_H

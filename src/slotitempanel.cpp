@@ -1,5 +1,4 @@
 ﻿#include <QDebug>
-#include <QTreeWidgetItem>
 #include <QJsonArray>
 
 #include "slotitempanel.h"
@@ -40,18 +39,75 @@ SlotItemPanel::SlotItemPanel(QWidget* parent) : QTreeWidget(parent) {
   }
 }
 
-void SlotItemPanel::OnDataUpdated_() {
+void SlotItemPanel::OnDataUpdated_(const KanColleDatabase* db) {
   qDebug() << __func__ << " called";
-  auto& db = KanColleDatabase::GetInstance();
-  auto obj = db.GetData();
-  auto api_data = (*obj)["api_data"];
-  auto mst_slotitem = api_data.toObject()["api_mst_slotitem"];
+  auto mst_data = db->GetData();
+  auto& mst_slot_item = mst_data->mst_slot_item;
 
-  for (auto item : mst_slotitem.toArray()) {
-    auto name = item.toObject()["api_name"];
-    auto category_id = item.toObject()["api_type"].toArray()[0];
+  for (auto& p : mst_slot_item) {
+    auto& item = p.second;
+    int category_id = item.type[0];
+    int slot_id = item.id;
 
-    auto parent = topLevelItem(category_id.toDouble() - 1);
-    new QTreeWidgetItem(parent, {name.toString(), "0"});
+    auto parent = topLevelItem(category_id - 1);
+    auto tree_item = new QTreeWidgetItem(parent, {item.name, "0"});
+    tree_item->setHidden(true);
+    item_type_widgets_[slot_id] = tree_item;
+  }
+
+  disconnect(db, &KanColleDatabase::DataUpdated,
+             this, &SlotItemPanel::OnDataUpdated_);
+  connect(&KanColleDatabase::GetInstance(), &KanColleDatabase::SlotItemUpdated,
+          this, &SlotItemPanel::UpdateItemList_);
+  connect(&KanColleDatabase::GetInstance(), &KanColleDatabase::ShipUpdated,
+          this, &SlotItemPanel::UpdateItemList_);
+}
+
+void SlotItemPanel::UpdateItemList_(const KanColleDatabase* db) {
+  qDebug() << __func__ << " called";
+  auto slot_item = db->GetSlotItem();
+  if (slot_item == nullptr) return;
+
+  decltype(item_widgets_) new_widgets;
+  for (auto& item : *slot_item) {
+    auto iter = item_widgets_.find(item.id);
+    if (iter == item_widgets_.end()) {
+      auto parent_widget = item_type_widgets_.find(item.slot_item_id);
+      if (item_type_widgets_.count(item.slot_item_id) == 0) {
+        qFatal("slot_id %d not found", item.slot_item_id);
+      }
+      auto widget = new QTreeWidgetItem(parent_widget->second,
+                                        {QString::number(item.id), ""});
+      new_widgets.insert({item.id, widget});
+    } else {
+      new_widgets.insert({item.id, iter->second});
+      item_widgets_.erase(iter);
+    }
+  }
+
+  for (auto& p : item_widgets_) {
+    p.second->parent()->removeChild(p.second);
+    delete p.second;
+  }
+
+  for (auto& p : item_type_widgets_) {
+    int n = p.second->childCount();
+    p.second->setText(1, QString::number(n));
+    p.second->setHidden(n == 0);
+  }
+
+  item_widgets_.swap(new_widgets);
+
+  auto mst_data = db->GetData();
+  auto ship = db->GetShip();
+  if (mst_data == nullptr || ship == nullptr) return;
+  for (auto& s : *ship) {
+    auto ship_name = mst_data->mst_ship.find(s.ship_id)->second.name;
+    auto ship_text = QString("%1 (Lv%2)").arg(ship_name).arg(s.lv);
+    for (auto slot : s.slot) {
+      if (slot >= 0) {
+        item_widgets_[slot]->setText(1, ship_text);
+      }
+    }
   }
 }

@@ -1,7 +1,10 @@
-#ifndef SLOTITEMPANEL_H
+﻿#ifndef SLOTITEMPANEL_H
 #define SLOTITEMPANEL_H
 
+#include <unordered_map>
+
 #include <QTreeWidget>
+#include <QTreeWidgetItem>
 
 #include "kancolledatabase.h"
 
@@ -11,7 +14,12 @@ public:
   SlotItemPanel(QWidget* parent = nullptr);
 
 private slots:
-  void OnDataUpdated_();
+  void OnDataUpdated_(const KanColleDatabase* db);
+  void UpdateItemList_(const KanColleDatabase* db);
+
+private:
+  std::unordered_map<int, QTreeWidgetItem*> item_type_widgets_;
+  std::unordered_map<int, QTreeWidgetItem*> item_widgets_;
 };
 
 #endif // SLOTITEMPANEL_H

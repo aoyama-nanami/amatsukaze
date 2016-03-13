@@ -1,4 +1,4 @@
-#include <QHBoxLayout>
+﻿#include <QHBoxLayout>
 #include <QTabWidget>
 
 #include "mainwindow.h"
@@ -12,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   central_widget->setLayout(layout);
 
   web_engine_view_ = new QWebEngineView;
+  web_engine_view_->setMinimumWidth(996);
   layout->addWidget(web_engine_view_);
 
   auto tab_widget = new QTabWidget;

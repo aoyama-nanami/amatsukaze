@@ -3,6 +3,7 @@
 
 #include <QByteArray>
 #include <QDebug>
+#include <QJsonArray>
 #include <QJsonDocument>
 
 #include <boost/algorithm/string.hpp>
@@ -15,6 +16,7 @@
 
 #include "httpchunkedfilter.h"
 #include "kancolledatabase.h"
+#include "util.h"
 
 namespace {
   std::vector<char> DecompressResponseBody(const std::string& response) {
@@ -58,7 +60,6 @@ namespace {
       qFatal("Transfer-Encoding %s not implemented", transfer_encoding.c_str());
     }
 
-
     in.push(source);
     std::vector<char> out;
 
@@ -83,12 +84,16 @@ KanColleDatabase& KanColleDatabase::GetInstance() {
   return obj;
 }
 
-std::shared_ptr<const QJsonObject> KanColleDatabase::GetData() const {
+std::shared_ptr<const MstData> KanColleDatabase::GetData() const {
   return std::atomic_load(&data_);
 }
 
-std::shared_ptr<const QJsonObject> KanColleDatabase::GetSlotItem() const {
+std::shared_ptr<const SlotItemList> KanColleDatabase::GetSlotItem() const {
   return std::atomic_load(&slot_item_);
+}
+
+std::shared_ptr<const ShipList> KanColleDatabase::GetShip() const {
+  return std::atomic_load(&ship_);
 }
 
 void KanColleDatabase::ProcessData(KcsApi api_name,
@@ -106,14 +111,40 @@ void KanColleDatabase::ProcessData(KcsApi api_name,
     return;
   }
 
+  auto api_data = doc.object()["api_data"];
   if (api_name == KcsApi::START2) {
-    auto obj = std::make_shared<const QJsonObject>(doc.object());
-    std::atomic_store(&data_, obj);
-    emit DataUpdated();
+    try {
+      auto mst_data = MstData::FromJsonValue(api_data);
+      std::atomic_store(&data_, mst_data);
+    } catch (BadJsonValue& e) {
+      qFatal(e.what());
+    }
+    emit DataUpdated(this);
   } else if (api_name == KcsApi::SLOT_ITEM) {
-    auto obj = std::make_shared<const QJsonObject>(doc.object());
-    std::atomic_store(&slot_item_, obj);
-    emit SlotItemUpdated(*this);
+    auto new_item = std::make_shared<SlotItemList>();
+    try {
+      for (auto& x : api_data.toArray()) {
+        new_item->push_back(SlotItem::FromJsonValue(x));
+      }
+    } catch (BadJsonValue& e) {
+      qFatal(e.what());
+    }
+    std::atomic_store(&slot_item_,
+                      std::const_pointer_cast<const SlotItemList>(new_item));
+    emit SlotItemUpdated(this);
+  } else if (api_name == KcsApi::PORT) {
+    auto api_ship = api_data.toObject()["api_ship"].toArray();
+    auto new_ship = std::make_shared<ShipList>();
+    try {
+      for (auto& x : api_ship) {
+        new_ship->push_back(Ship::FromJsonValue(x));
+      }
+    } catch (BadJsonValue& e) {
+      qFatal(e.what());
+    }
+    std::atomic_store(&ship_,
+                      std::const_pointer_cast<const ShipList>(new_ship));
+    emit ShipUpdated(this);
   }
 
 }

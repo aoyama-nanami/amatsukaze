@@ -1,4 +1,4 @@
-#include <QDebug>
+﻿#include <QDebug>
 #include <QUrl>
 
 #include <boost/algorithm/string.hpp>
@@ -22,6 +22,8 @@ namespace {
       return KcsApi::START2;
     } else if (url.path() == "/kcsapi/api_get_member/slot_item") {
       return KcsApi::SLOT_ITEM;
+    } else if (url.path() == "/kcsapi/api_port/port") {
+      return KcsApi::PORT;
     }
     return KcsApi::NONE;
   }
